@@ -1,0 +1,6 @@
+
+    Informe resumido para urls_conteo_mayor_igual_3:
+    Total de URLs: 234
+    URLs activas: 231 (98.72%)
+    URLs inactivas: 3 (1.28%)
+    

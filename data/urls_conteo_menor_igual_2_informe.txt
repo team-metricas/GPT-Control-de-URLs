@@ -1,0 +1,6 @@
+
+    Informe resumido para urls_conteo_menor_igual_2:
+    Total de URLs: 356
+    URLs activas: 95 (26.69%)
+    URLs inactivas: 261 (73.31%)
+    
