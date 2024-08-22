@@ -8,28 +8,28 @@ import os
 import sys
 import requests
 from urllib3.exceptions import InsecureRequestWarning
-from requests.exceptions import RequestException
+#from requests.exceptions import RequestException
 import warnings
 import time
 
-# Suprimir advertencias de InsecureRequestWarning
+# Suprimo advertencias de InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+
+# Cambio a mi directorio de datos, siempre es ../data en cada repo
 os.chdir("../data/")
 
-# Encabezados de solicitud personalizados
+# Encabezados de solicitud personalizados para hacer los requests mas humanos
 headers = {
     'User-Agent': 'Usuario Personalizado',
     'Accept-Language': 'es-ES,es;q=0.9',
 }
 
-# Nombre del archivo Excel
-nombre_archivo = "Links y PDFs Ingestados en GPT.xlsx"
+el_excell = "Links y PDFs Ingestados en GPT.xlsx"
 
-# Intentar leer el archivo Excel
 try:
-    df = pd.read_excel(nombre_archivo)
+    df = pd.read_excel(el_excell)
 except FileNotFoundError:
-    print(f"Error: No se encontró el archivo '{nombre_archivo}'")
+    print(f"Error: No se encontró el archivo '{el_excell}'")
     sys.exit()
 except ValueError as ve:
     print(f"Error: {str(ve)}")
@@ -38,25 +38,17 @@ except Exception as e:
     print(f"Error al procesar el archivo: {str(e)}")
     sys.exit()
     
-# Verificar si existen las columnas necesarias
-columnas_requeridas = ['ESTADO', 'Conteo', 'URL']
-for columna in columnas_requeridas:
-    if columna not in df.columns:
-        raise ValueError(f"La columna '{columna}' no existe en el archivo Excel.")
-
-# Filtrar las filas donde ESTADO no es "BAJA"
+# SOLO tomo donde no es "BAJA"
 df_filtrado = df[df['ESTADO'] != "BAJA"].copy()
 
-# Eliminar filas donde URL está vacío o nulo
-df_filtrado = df_filtrado.dropna(subset=['URL'])  # Elimina filas con URL nulo
-df_filtrado = df_filtrado[df_filtrado['URL'].str.strip() != '']  # Elimina filas con URL vacío (después de quitar espacios)
+# Elimino donde URL está vacío o nulo
+df_filtrado = df_filtrado.dropna(subset=['URL'])  
+df_filtrado = df_filtrado[df_filtrado['URL'].str.strip() != '']  
 
-# Reiniciar el índice del DataFrame
 df_filtrado = df_filtrado.reset_index(drop=True)
 
-print(f"Filas restantes después de eliminar URLs vacías o nulas: {len(df_filtrado)}")
 
-# Dividir el DataFrame filtrado en dos basado en el campo 'Conteo'
+# Divido segun valores en Conteo
 df_menor_igual_2 = df_filtrado[df_filtrado['Conteo'] <= 2].copy()
 df_mayor_igual_3 = df_filtrado[df_filtrado['Conteo'] >= 3].copy()
 
@@ -75,10 +67,10 @@ def verificar_url(url):
             
             if response.status_code == 200:
                 esValida = True
-                print(f"  ✓ URL válida: {url}")
+                print(f"  URL válida: {url}")
                 return True
         except requests.exceptions.RequestException as e:
-            print(f"  ✗ Error al acceder a {url}: {e}")
+            print(f" X Error al acceder a {url}: {e}")
             break
         
         intento_actual += 1
@@ -87,23 +79,20 @@ def verificar_url(url):
         time.sleep(1)
              
     if not esValida:
-        print(f"  ✗ URL inválida: {url}")
+        print(f" X  URL inválida: {url}")
         return False
     
 def procesar_dataframe(df, nombre_base):
-    df = df.copy()  # Crear una copia explícita
+    df = df.copy()
     df['URL_activa'] = df['URL'].apply(verificar_url)
     
-    # Crear archivo CSV con todas las URLs y su estado
-    df[['URL', 'URL_activa']].to_csv(f"{nombre_base}_todas.csv", index=False)
-    print(f"Se ha creado el archivo {nombre_base}_todas.csv")
     
-    # Crear archivo CSV solo con las URLs inválidas
+    # Genero una archivo CSV  con URLs inválidas
     df_invalidas = df[~df['URL_activa']]
     df_invalidas[['URL']].to_csv(f"{nombre_base}_invalidas.csv", index=False)
-    print(f"Se ha creado el archivo {nombre_base}_invalidas.csv")
+    print("Archivo exportado OK")
     
-    # Generar informe resumido
+    # Calculo algunos descriptores
     total_urls = len(df)
     urls_activas = df['URL_activa'].sum()
     urls_inactivas = total_urls - urls_activas
@@ -118,14 +107,14 @@ def procesar_dataframe(df, nombre_base):
     
     with open(f"{nombre_base}_informe.txt", "w") as f:
         f.write(informe)
-    print(f"Se ha creado el archivo {nombre_base}_informe.txt")
+    print("Exportados los descriptores estadisticos basicos")
     
     return informe
 
-# Procesar cada DataFrame
+# Proceso cada uno de los dataframes ya dividos
 informe_menor_igual_2 = procesar_dataframe(df_menor_igual_2, "urls_conteo_menor_igual_2")
 informe_mayor_igual_3 = procesar_dataframe(df_mayor_igual_3, "urls_conteo_mayor_igual_3")
 
-# Imprimir informes en consola
+# Muestro por Standard Output los descriptores
 print("\n" + informe_menor_igual_2)
 print("\n" + informe_mayor_igual_3)
