@@ -82,15 +82,26 @@ def verificar_url(url):
         print(f" X  URL inválida: {url}")
         return False
     
+import os
+
+import os
+
+import os
+
 def procesar_dataframe(df, nombre_base):
     df = df.copy()
     df['URL_activa'] = df['URL'].apply(verificar_url)
     
-    
-    # Genero una archivo CSV  con URLs inválidas
+    # Genero un archivo CSV con URLs inválidas (en la carpeta actual)
     df_invalidas = df[~df['URL_activa']]
     df_invalidas[['URL']].to_csv(f"{nombre_base}_invalidas.csv", index=False)
-    print("Archivo exportado OK")
+    print(f"Archivo de URLs inválidas exportado: {nombre_base}_invalidas.csv")
+    
+    # Genero un archivo CSV con URLs válidas en la carpeta "../"
+    df_validas = df[df['URL_activa']]
+    ruta_validas = os.path.join("../", f"{nombre_base}_validas.csv")
+    df_validas[['URL']].to_csv(ruta_validas, index=False)
+    print(f"Archivo de URLs válidas exportado: {ruta_validas}")
     
     # Calculo algunos descriptores
     total_urls = len(df)
@@ -107,9 +118,10 @@ def procesar_dataframe(df, nombre_base):
     
     with open(f"{nombre_base}_informe.txt", "w") as f:
         f.write(informe)
-    print("Exportados los descriptores estadisticos basicos")
+    print(f"Exportados los descriptores estadísticos básicos: {nombre_base}_informe.txt")
     
     return informe
+
 
 # Proceso cada uno de los dataframes ya dividos
 informe_menor_igual_2 = procesar_dataframe(df_menor_igual_2, "urls_conteo_menor_igual_2")
